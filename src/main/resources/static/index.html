@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Список людей</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container mt-4">
+    <h1>Додати людину</h1>
+    <form id="personForm">
+        <div class="form-group">
+            <label for="firstName">Ім'я:</label>
+            <input type="text" class="form-control" id="firstName" required>
+        </div>
+        <div class="form-group">
+            <label for="lastName">Прізвище:</label>
+            <input type="text" class="form-control" id="lastName" required>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="addPerson()">Додати</button>
+    </form>
+
+    <h1 class="mt-4">Список людей</h1>
+    <div id="peopleList"></div>
+    <button type="button" class="btn btn-danger mt-3" onclick="clearData()">Видалити всі дані</button>
+</div>
+
+<script>
+    function addPerson() {
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+
+        fetch('/addPerson', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`
+        })
+            .then(response => response.json())
+            .then(data => {
+                const peopleList = document.getElementById('peopleList');
+                const newPersonBlock = document.createElement('div');
+                newPersonBlock.classList.add('person-block', 'mt-3', 'border', 'p-3', 'shadow');
+                newPersonBlock.innerHTML = `
+                <div>ID: ${data.id}</div>
+                <div>Ім'я: ${data.firstName}</div>
+                <div>Прізвище: ${data.lastName}</div>
+            `;
+                peopleList.appendChild(newPersonBlock);
+
+                // Збереження даних у localStorage
+                const peopleData = JSON.parse(localStorage.getItem('peopleData') || '[]');
+                peopleData.push(data);
+                localStorage.setItem('peopleData', JSON.stringify(peopleData));
+            })
+            .catch(error => console.error('Помилка:', error));
+
+        resetForm();
+    }
+
+    function clearData() {
+        // Видалення блоків зі сторінки
+        document.getElementById('peopleList').innerHTML = '';
+        // Видалення даних з локального сховища
+        localStorage.removeItem('peopleData');
+    }
+
+    function resetForm() {
+        document.getElementById('personForm').reset();
+    }
+
+
+    // Відновлення даних при завантаженні сторінки
+    document.addEventListener('DOMContentLoaded', () => {
+        const peopleList = document.getElementById('peopleList');
+        const peopleData = JSON.parse(localStorage.getItem('peopleData') || '[]');
+        peopleData.forEach(person => {
+            const newPersonBlock = document.createElement('div');
+            newPersonBlock.classList.add('person-block', 'mt-3', 'border', 'p-3', 'shadow');
+            newPersonBlock.innerHTML = `
+                <div>ID: ${person.id}</div>
+                <div>Ім'я: ${person.firstName}</div>
+                <div>Прізвище: ${person.lastName}</div>
+            `;
+            peopleList.appendChild(newPersonBlock);
+        });
+    });
+</script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>
